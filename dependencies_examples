@@ -1,0 +1,40 @@
+Direct dependency: -
+In the below file I have added dependency on file1 and file2 and there is no dependency for file3. So, in second snap we can see that terraform has created file3 first and then file1 & file2 based on dependencies.
+
+
+resource "local_file" "file1" {
+  filename = local_file.file3.filename
+  content  = local_file.file3.content
+}
+
+resource "local_file" "file2" {
+  filename = "test_dependent2.txt"
+  content  = local_file.file1.content
+}
+
+resource "local_file" "file3" {
+  filename = "test_dependent3.txt"
+  content  = "dependency test 3"
+}
+
+
+Indirect dependency: -
+Now we will create dependencies without reference and we can add “depends_on” in resource.
+In the below example I have mentioned depends_on in file3. So, file3 will create after file1 & file2 create.
+
+resource "local_file" "file1" {
+  filename = "abc.txt"
+  content  = "first"
+}
+
+resource "local_file" "file2" {
+  filename = "test_dependent2.txt"
+  content  = "Second"
+}
+
+
+resource "local_file" "file3" {
+  filename = "test_dependent3.txt"
+  content  = "dependency test 3"
+depends_on = [local_file.file1, local_file.file2]
+}
