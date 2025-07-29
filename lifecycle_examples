@@ -1,0 +1,70 @@
+# The lifecycle block in Terraform gives you control over how resources behave during creation, updates, and deletion.
+
+# 1. create_before_destroy
+
+resource "local_file" "file_destroy" {
+  filename = "test_destroy.txt"
+  content  = "destroy test"
+
+lifecycle {
+create_before_destroy = true
+	}
+}
+
+
+# 2. prevent_destroy
+
+resource "local_file" "file_destroy2" {
+  filename = "test_destroy2.txt"
+  content  = "destroy test2"
+
+lifecycle {
+prevent_destroy = true
+	}
+}
+
+# 3. ignore_changes
+
+resource "local_file" "file_ignore" {
+  filename = "test_destroy3.txt"
+  content  = "destroy test3"
+
+lifecycle {
+ignore_changes = [content]
+	}
+}
+
+# 4. replace_triggered_by
+
+resource "local_file" "trigger_by" {
+  filename = "file.txt"
+  content  = "Linked to another resource"
+
+  lifecycle {
+    replace_triggered_by = [local_file.trigger.id]
+  }
+}
+
+resource "local_file" "trigger" {
+  filename = "trigger.txt"
+  content  = "Trigger file"
+}
+
+# 5. precondition and postcondition
+These are checks that validate assumptions before or after resource creation.
+resource "local_file" "example" {
+  filename = "file.txt"
+  content  = "Conditional content"
+  
+lifecycle {
+    precondition {
+      condition     = length("Conditional content") > 10
+      error_message = "Content must be longer than 10 characters"
+    }
+ 
+    postcondition {
+      condition     = self.filename != ""
+      error_message = "Filename must not be empty"
+    }
+  }
+}
