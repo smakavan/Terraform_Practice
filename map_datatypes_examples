@@ -1,0 +1,70 @@
+variable "map1" {
+  type = map(any)
+  default = {
+    name = "map_test.txt"
+    id   = 122
+  }
+}
+
+
+variable "map2" {
+  type = map(number)
+  default = {
+    id    = 145
+    phone = 556677
+  }
+}
+
+variable "map3" {
+  type = map(string)
+  default = {
+    name = "trial_map.txt"
+    file = "file1map.txt"
+  }
+}
+
+
+resource "local_file" "map_1" {
+        filename = var.map1.id
+        content = "map1_file"
+}
+
+resource "local_file" "map_2" {
+        filename = var.map2.phone
+        content = "map2_file"
+}
+
+resource "local_file" "map_3" {
+        filename = var.map3.file
+        content = "map3_file"
+}
+
+
+
+# Example of map(list(string))
+
+variable "map_list_string" {
+	type = map(list(string))
+	default = {
+		name = ["sac", "red", "blue"]
+		id = ["1234", "5678"]
+		file = ["UUU", "TTT"]
+			}
+		}
+
+
+resource "local_file" "map_list1" {
+	filename = var.map_list_string.name[1]
+	content = "map_list_string_1"
+}
+
+resource "local_file" "map_list2" {
+	filename = var.map_list_string.id[0]
+	content = "map_list_string_2"
+}
+
+
+resource "local_file" "map_list3" {
+	filename = var.map_list_string.file[0]
+	content = "map_list_string_3"
+}
