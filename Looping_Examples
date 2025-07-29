@@ -1,0 +1,112 @@
+# There are three types of looping in terraform like count, for_each & for loops.
+
+1. count looping example.
+	· Purpose: Create a fixed number of identical resources.
+	· Type: Accepts a number.
+	· Access: Use count.index to reference each instance.
+Here, I have given list with string of three names in defaults, so, it has created all three files with count looping.
+
+variable "count1" {
+  type    = list(string)
+  default = ["aa", "bb", "cc"]
+}
+
+resource "local_file" "count_test" {
+  count    = length(var.count1)
+  filename = var.count1[count.index]
+  content  = "count test"
+}
+
+2. for_each looping example.
+	· Purpose: Create resources based on a map or set of strings.
+	· Type: Accepts a map or set.
+	· Access: Use each.key and each.value.
+Here, in the below example I used two types of data types (one is list(string) and second is map(string)). 
+So, as mentioned for_each support map or set data only.
+Then input type I has to convert from list to set in resource as given in below snap. For input type set(string) no need to define the same.
+
+variable "for_each1" {
+  type    = list(string)
+  default = ["aaa", "bbb", "ccc"]
+}
+
+variable "for_each2" {
+  type    = set(string)
+  default = ["aaa1", "bbb1", "ccc1"]
+}
+
+resource "local_file" "for_each_ex1" {
+  filename = each.value
+  for_each = toset(var.for_each1)
+  content  = "For each example1"
+}
+
+resource "local_file" "for_each_ex2" {
+  filename = each.value
+  for_each = var.for_each2
+  content  = "For each example2"
+}
+
+
+3. for looping example.
+A for expression is used to transform or filter collections like lists, maps, sets, or tuples.
+It doesn’t create resources directly—it helps prepare data that can be used in resource blocks, outputs, locals, or variables.
+	·  Purpose: Transform or filter collections (lists, maps, sets) into new ones.
+	· Type: Accepts any iterable collection.
+	· Access: Use item, or key, value for maps.
+Use of for as shown below
+for value in  <listname> : <operation>        
+for key, value in <map name> : <operation>
+
+variable "for_loop1" {
+  type    = list(string)
+  default = ["file1", "file2", "file3"]
+}
+
+
+variable "for_loop2" {
+  type = map(string)
+  default = {
+    name = "sachin"
+    id   = "123"
+  }
+}
+
+
+locals {
+  list_upper = [for value in var.for_loop1 : upper(value)]
+  map_key    = [for key, value in var.for_loop2 : upper(key)]
+  map_value  = [for key, value in var.for_loop2 : upper(value)]
+  map_upper1 = { for key, value in var.for_loop2 : key => upper(value) }
+  map_upper2 = { for key, value in var.for_loop2 : upper(key) => upper(value) } # if we are using both key & value then we have to define like this {=>}
+}
+
+output "list1" {
+  value = local.list_upper
+}
+
+output "map1" {
+  value = local.map_key
+}
+
+output "map2" {
+  value = local.map_value
+}
+
+output "map3" {
+  value = local.map_upper1
+}
+
+output "map4" {
+  value = local.map_upper2
+}
+
+# resource for example
+
+resource "local_file" "list_test" {
+  count    = length(local.list_upper)
+  filename = local.list_upper[count.index]
+  content  = "test"
+}
+
+
