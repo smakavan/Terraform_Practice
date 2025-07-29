@@ -1,0 +1,31 @@
+variable "list1" {
+  type    = list(any)
+  default = [123, "xyz", true]
+}
+
+variable "list2" {
+  type    = list(number)
+  default = [1, 2, 4, 5]
+
+}
+
+variable "list3" {
+  type    = list(string)
+  default = ["add", "bff", "ctt"]
+}
+
+resource "local_file" "list_1" {
+  filename = var.list1[1]
+  content  = "example_list1"
+}
+
+
+resource "local_file" "list_2" {
+  filename = var.list2[1]
+  content  = "example_list2"
+}
+
+resource "local_file" "list_3" {
+  filename = var.list3[0]
+  content  = "example_list3"
+}
