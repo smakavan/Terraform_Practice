@@ -1,0 +1,42 @@
+variable "file01" {
+  type    = string
+  default = "abc.txt"
+}
+
+
+variable "file2" {
+  type    = number
+  default = 10
+}
+
+variable "file3" {
+  type    = bool
+  default = false
+}
+
+
+variable "file4" {
+  type    = any
+  default = "test_any.txt"
+}
+
+
+resource "local_file" "file_1" {
+  filename = var.file01
+  content  = "xyz"
+}
+
+resource "local_file" "file_2" {
+  filename = var.file2
+  content  = "file2"
+}
+
+resource "local_file" "file_3" {
+  filename = var.file3
+  content  = "file3"
+}
+
+resource "local_file" "file_4" {
+  filename = var.file4
+  content  = "file4"
+}
