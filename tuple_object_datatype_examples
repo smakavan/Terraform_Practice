@@ -1,0 +1,46 @@
+# Example of tuple data type
+
+variable "tuple_1" {
+  type    = tuple([string, number, bool, list(number), list(string)])
+  default = ["RRR", 12356, true, [88, 99, 100], ["QQQ", "OOO", "RRRR"]]
+}
+
+resource "local_file" "tuple1" {
+  filename = var.tuple_1[1]
+  content  = "tuple test"
+}
+
+resource "local_file" "tuple2" {
+  filename = var.tuple_1[4][1]
+  content = "tuple test 2"
+}
+
+
+
+# Example of object data type
+
+
+variable "object_1" {
+        type = object ({
+        name = string
+        id = number
+        location = list(string)
+        })
+        default = {
+        name = "sachin"
+        id = 1122
+        location = ["Karnatak", "Bangalore"]
+        }
+}
+
+
+resource "local_file" "object1" {
+        filename = var.object_1.name
+        content = "object 1 trial"
+}
+
+
+resource "local_file" "object2" {
+        filename = var.object_1.location[1]
+        content = "object 2 trial"
+}
