@@ -1,0 +1,61 @@
+# ---- main module file ------
+
+
+module "mod1" {
+  source = "./config"      # Local file path
+  file1  = "mod_file1.txt" # file1 is variable in resource file so to change variable we can inject from module.
+  cont1  = "From module 1" # cont1 is variable in resource file so to change variable we can inject from module.
+}
+
+module "mod2" {
+  source = "./config"      # Local file path
+  file1  = "mod_file2.txt" # file1 is variable in resource file so to change variable we can inject from module.
+  cont1  = "From module 2" # cont1 is variable in resource file so to change variable we can inject from module.
+}
+
+output "mod1_f1" {
+  value = module.mod1.mod_out # Here we took mod_out value from inside resource file to show output in terminal.
+}
+
+output "mod2_f2" {
+  value = module.mod2.mod_out # Here we took mod_out value from inside resource file to show output in terminal.
+}
+
+
+
+# ---- module file from git hub------
+
+module "git" {
+  source = "github.com/smakavan/Terraform_Practice/tree/main/Terraform_Module"      # GitHub path
+}
+
+
+# ---- module file from Terraform Registry------
+
+module "vnet" {
+  source  = "Azure/vnet/azurerm"
+  version = "5.0.1"
+  # insert the 2 required variables here
+}
+
+
+# ----- under resource file in config folder--- resource_file.tf ---- here output and variable both added in same file
+
+variable "file1" {
+  default = "f1.txt"
+}
+
+variable "cont1" {
+  default = "From resource file"
+}
+
+
+resource "local_file" "res_file" {
+  filename = var.file1
+  content  = var.cont1
+}
+
+
+output "mod_out" {
+  value = local_file.res_file.id # This output is inside the resource file and not visible outside. To get output outside define output variable in module file.
+}
