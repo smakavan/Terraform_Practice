@@ -1,0 +1,54 @@
+For this example, I have created two modules in main.tf file as below.
+Here, I am trying to share content information of one file from input_file_content module to pass the same content in output_file_content module resources.
+· input_file_content – creates content like “content from file 1” in file1.txt
+· output_file_content – get the same content in file2.txt
+There are three steps to perform object or value passing to other modules.
+Step 1: Output the object from the input_file_content module
+Step 2: Reference the output in the root module
+Step 3: Use the input in the output_file_content module
+ 
+Below configuration are created for the example (resource/module code details given below) :-
+
+
+# main.tf from root module directory (02082025_module)
+# main root module file
+ 
+module "input_file_content" {
+  source = "/home/sachin/Terraform/020825_module/input"
+}
+ 
+module "output_file_content" {
+  source   = "/home/sachin/Terraform/020825_module/output"
+  content2 = module.input_file_content.file1_content
+}
+
+
+# main.tf from child module directory (02082025_module/input)
+# Output the object (content value) from the input_file_content module (module defined in main module file)
+ 
+resource "local_file" "file1" {
+  filename = "file1.txt"
+  content  = "content from file 1"
+}
+output "file1_content" {
+  value = local_file.file1.content
+}
+
+# main.tf from child module directory (02082025_module/output)
+# # Input the object (content value) from the input_file_content module to output_file_content module (both module defined in main module file)
+ 
+variable "content2" {
+  type = string
+}
+ 
+resource "local_file" "file2" {
+  filename = "file2.txt"
+  content  = var.content2
+}
+
+
+Real-World Scenarios can be: -
+Template Reuse Across Modules - Read content from one file or config and inject into another system.
+Passing Generated Credentials - Output a password or key from one module, use it for login or config elsewhere
+Test Artifact Propagation - Generate test data in one module, validate or consume it in another
+Interdependent Resource Setup - Output VNet/Subnet/NSG IDs from one module, connect VMs or Load Balancers in another
