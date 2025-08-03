@@ -1,0 +1,240 @@
+
+# --- set the subscription ---
+
+az account set --subscription <subscription id> - 5fd92075-bce6-4a41-ba79----
+
+
+# --- set the subscription in environment variable ---
+
+export ARM_SUBSCRIPTION_ID="5fd92075-bce6-4a41-ba79-"
+
+
+# --- Providers ------
+
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "4.38.1"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+
+
+
+# ----- resource group create ----
+
+variable "rgname" {
+	default = "test-sac"
+}
+
+variable "rglocation" {
+	default = "west us 3"
+}
+
+resource "azurerm_resource_group" "rg_test" {
+  name     = var.rgname
+  location = var.rglocation
+}
+
+
+# ----- vnet create ----
+
+
+variable "vnet_name" {
+	default = "test-sac-vnet"
+}
+
+variable "address_space" {
+	default = ["10.1.0.0/16"]
+	type = list(string)
+}
+
+resource "azurerm_virtual_network" "vnet1" {
+  name                = var.vnet_name
+  location            = azurerm_resource_group.rg_test.location
+  resource_group_name = azurerm_resource_group.rg_test.name
+  address_space       = var.address_space
+}
+
+
+# ----- sub net create ----
+
+variable "snet_name" {
+	default = "test-sac-subnet"
+}
+
+variable "address_prefixes_snet" {
+	default = ["10.1.1.0/24"]
+	type = list(string)
+}
+
+
+resource "azurerm_subnet" "snet_name1" {
+  name                 = var.snet_name
+  resource_group_name = azurerm_resource_group.rg_test.name
+  virtual_network_name = azurerm_virtual_network.vnet1.name
+  address_prefixes     = var.address_prefixes_snet
+}
+
+
+
+# ----- create public IP----
+
+
+variable "pip_name" {
+	default = "pip-test"
+}
+
+resource "azurerm_public_ip" "public_ip" {
+  name                = var.pip_name
+  resource_group_name = azurerm_resource_group.rg_test.name
+  location            = azurerm_resource_group.rg_test.location
+  allocation_method   = "Static"
+}
+
+
+# ----- create nsg----
+
+
+variable "nsg_name" {
+	default = "nsg-test"
+}
+
+
+resource "azurerm_network_security_group" "nsg_name1" {
+  name                = var.nsg_name
+  location            = azurerm_resource_group.rg_test.location
+  resource_group_name = azurerm_resource_group.rg_test.name
+
+  security_rule {
+    name                       = "test1234"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+
+# ----- create nic----
+
+variable "nic_name" {
+	default = "nic-test"
+}
+
+variable "ipconfig_name" {
+	default = "ip-name"
+}
+
+
+resource "azurerm_network_interface" "nic_name1" {
+  name                = var.nic_name
+  location            = azurerm_resource_group.rg_test.location
+  resource_group_name = azurerm_resource_group.rg_test.name
+
+  ip_configuration {
+    name                          = var.ipconfig_name
+    subnet_id                     = azurerm_subnet.snet_name1.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.public_ip.id # Associate public ip to NIC
+  }
+}
+
+
+# ---- NIC and NSG Association ------
+
+
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.nic_name1.id
+  network_security_group_id = azurerm_network_security_group.nsg_name1.id
+}
+
+
+# ---- SSH Key generate for Linux VM and associate ------
+# We have to generate ssh key by using ssh-keygen -t rsa and provide path in public_key file
+
+variable "ssh_key" {
+	default = "ssh-key"
+}
+
+resource "azurerm_ssh_public_key" "sshkey1" {
+  name                = var.ssh_key
+  location            = azurerm_resource_group.rg_test.location
+  resource_group_name = azurerm_resource_group.rg_test.name
+  public_key          = file("~/.ssh/id_rsa.pub")
+}
+
+
+# --- Virtual Machine ------ Linux
+
+
+variable "user_name" {
+	default = "azureuser"
+}
+
+variable "vm_name" {
+	default = "test-vm"
+}
+
+variable "vm_size" {
+	default = "Standard_F2"
+}
+
+
+resource "azurerm_linux_virtual_machine" "vm_name" {
+  name                = var.vm_name
+  location            = azurerm_resource_group.rg_test.location
+  resource_group_name = azurerm_resource_group.rg_test.name
+  size                = var.vm_size
+  admin_username      = var.user_name
+  network_interface_ids = [
+    azurerm_network_interface.nic_name1.id,
+  ]
+
+  admin_ssh_key {
+    username   = var.user_name
+    public_key = azurerm_ssh_public_key.sshkey1.public_key
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+}
+
+
+
+# --------- variables -------other variable also we can define in the above vm creation
+
+
+rgname="rg-sac"
+rglocation="Australia East"
+vnet_name="vnet-sac-1"
+address_space=["10.3.0.0/16"]
+snet_name = "snet-sac-1"
+address_prefixes_snet=["10.3.0.0/24"]
+pip_name="pip_name_1"
+nsg_name="newnsg-1"
+nic_name="newnic-1"
+ipconfig_name="ipnamesac"
+vm_name="vm-test-1"
+vm_size="Standard_D2a_v4"
+user_name="sac"
+ssh_key="ssh-key-1"
